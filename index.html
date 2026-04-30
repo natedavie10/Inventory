@@ -442,6 +442,22 @@ function saveCount() {
   ITEMS.forEach(item => { const inp = document.getElementById('inp_'+item.id); if (inp) data[item.id] = parseInt(inp.value) || 0; });
   localStorage.setItem(sk(week), JSON.stringify(data));
   renderItems();
+
+  const t = getT();
+  const lowItems = ITEMS
+    .filter(item => t[item.id] > 0 && data[item.id] !== undefined && data[item.id] <= t[item.id])
+    .map(item => ({ name: item.name, qty: data[item.id], unit: item.unit, threshold: t[item.id] }));
+
+  if (lowItems.length > 0) {
+    fetch('https://karies-inventory-server.onrender.com/check-stock', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ location: LOC_LABELS[activeLoc], lowItems })
+    })
+    .then(() => console.log('Alert sent'))
+    .catch(err => console.error('Alert failed:', err));
+  }
+
   const btn = document.getElementById('save-count-btn');
   btn.textContent = 'Saved!'; btn.classList.add('success');
   setTimeout(() => { btn.textContent = 'Save count'; btn.classList.remove('success'); }, 2000);
