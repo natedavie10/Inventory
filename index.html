@@ -234,7 +234,7 @@
     <!-- INVENTORY TAB -->
     <div id="tab-inventory" class="tab-content active">
       <div class="week-row">
-        <span class="week-label">Week of:</span>
+        <span class="week-label">Week Ending:</span>
         <select class="week-select" id="inv-week" onchange="renderItems()"></select>
         <button class="save-btn" id="save-count-btn" onclick="saveCount()">Save count</button>
       </div>
@@ -379,12 +379,14 @@ function signOut() {
 
 function getWeeks(n=10) {
   const weeks = [], now = new Date(), day = now.getDay();
-  const sun = new Date(now); sun.setDate(now.getDate() - day);
+  const sat = new Date(now);
+  sat.setDate(now.getDate() + (6 - day));
   for (let i = 0; i < n; i++) {
-    const d = new Date(sun); d.setDate(sun.getDate() - i*7);
-    weeks.push({ label: 'Week of ' + d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}), key: d.toISOString().split('T')[0] });
+    const d = new Date(sat); d.setDate(sat.getDate() - i*7);
+    weeks.push({ label: 'Week ending ' + d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}), key: d.toISOString().split('T')[0] });
   }
   return weeks;
+}
 }
 function populateWeekSelects() {
   const weeks = getWeeks();
