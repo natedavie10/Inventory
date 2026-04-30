@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="KA Inventory" />
+<title>Karie Anne's — Inventory</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f5f4;
+    --bg3: #eeede8;
+    --text: #1a1a18;
+    --text2: #6b6b67;
+    --text3: #9b9b96;
+    --border: rgba(0,0,0,0.12);
+    --border2: rgba(0,0,0,0.22);
+    --blue-bg: #E6F1FB;
+    --blue-text: #0C447C;
+    --blue-border: #185FA5;
+    --green-bg: #EAF3DE;
+    --green-text: #27500A;
+    --amber-bg: #FAEEDA;
+    --amber-text: #633806;
+    --red-bg: #FCEBEB;
+    --red-border: #E24B4A;
+    --red-text: #791F1F;
+    --red-light: #F7C1C1;
+    --green-light: #C0DD97;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a;
+      --bg2: #252523;
+      --bg3: #2e2e2b;
+      --text: #f0efe8;
+      --text2: #a0a09a;
+      --text3: #6b6b65;
+      --border: rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.2);
+      --blue-bg: #0c2a44;
+      --blue-text: #85B7EB;
+      --blue-border: #378ADD;
+      --green-bg: #152808;
+      --green-text: #97C459;
+      --amber-bg: #2a1a04;
+      --amber-text: #EF9F27;
+      --red-bg: #2c1010;
+      --red-border: #E24B4A;
+      --red-text: #F09595;
+      --red-light: #4a1b1b;
+      --green-light: #1e3a08;
+    }
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg2); color: var(--text); min-height: 100vh; }
+  .app { max-width: 720px; margin: 0 auto; padding: 1rem; }
+
+  /* PIN screen */
+  .pin-screen { background: var(--bg); border-radius: var(--radius-lg); border: 0.5px solid var(--border); padding: 2rem 1.5rem; text-align: center; margin-top: 2rem; }
+  .pin-title { font-size: 22px; font-weight: 500; color: var(--text); margin-bottom: .25rem; }
+  .pin-sub { font-size: 14px; color: var(--text2); margin-bottom: 1.75rem; }
+  .loc-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 1.75rem; }
+  .loc-card { padding: 1rem .75rem; border-radius: var(--radius); border: 0.5px solid var(--border2); cursor: pointer; background: var(--bg2); transition: border-color .15s, background .15s; }
+  .loc-card:hover { border-color: var(--blue-border); background: var(--blue-bg); }
+  .loc-card.selected { border: 2px solid var(--blue-border); background: var(--blue-bg); }
+  .loc-card-name { font-size: 14px; font-weight: 500; color: var(--text); }
+  .loc-card-sub { font-size: 12px; color: var(--text2); margin-top: 3px; }
+  .pin-dots { display: flex; gap: 12px; justify-content: center; margin-bottom: 1.25rem; }
+  .pin-dot { width: 15px; height: 15px; border-radius: 50%; border: 1.5px solid var(--border2); background: transparent; transition: background .1s; }
+  .pin-dot.filled { background: var(--blue-border); border-color: var(--blue-border); }
+  .pin-pad { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; max-width: 240px; margin: 0 auto; }
+  .pin-key { padding: 16px; font-size: 20px; font-weight: 500; color: var(--text); background: var(--bg2); border: 0.5px solid var(--border2); border-radius: var(--radius); cursor: pointer; transition: background .1s, transform .08s; user-select: none; }
+  .pin-key:hover { background: var(--bg3); }
+  .pin-key:active { transform: scale(0.95); background: var(--bg3); }
+  .pin-key.sm { font-size: 13px; color: var(--text2); }
+  .pin-error { font-size: 13px; color: #A32D2D; margin-top: .85rem; min-height: 20px; }
+  .pin-hint { font-size: 12px; color: var(--text3); margin-top: .75rem; }
+
+  /* Header */
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 0.5px solid var(--border); flex-wrap: wrap; gap: 10px; }
+  .brand-name { font-size: 18px; font-weight: 500; color: var(--text); }
+  .brand-loc { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .loc-badge { font-size: 12px; padding: 4px 12px; border-radius: 20px; font-weight: 500; }
+  .badge-bountiful { background: var(--blue-bg); color: var(--blue-text); }
+  .badge-stadium { background: var(--green-bg); color: var(--green-text); }
+  .badge-storage { background: var(--amber-bg); color: var(--amber-text); }
+  .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .nav { display: flex; gap: 6px; }
+  .nav-btn { font-size: 13px; padding: 6px 14px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: transparent; color: var(--text2); cursor: pointer; transition: all .15s; }
+  .nav-btn.active, .nav-btn:hover { background: var(--bg2); color: var(--text); border-color: var(--border2); }
+  .signout-btn { font-size: 12px; padding: 5px 12px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: transparent; color: var(--text2); cursor: pointer; }
+  .signout-btn:hover { background: var(--bg2); }
+
+  /* Inventory */
+  .week-row { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; flex-wrap: wrap; }
+  .week-label { font-size: 13px; color: var(--text2); }
+  .week-select { font-size: 13px; padding: 6px 10px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: var(--bg); color: var(--text); cursor: pointer; }
+  .save-btn { font-size: 13px; padding: 7px 20px; border-radius: var(--radius); border: 0.5px solid var(--blue-border); background: var(--blue-bg); color: var(--blue-text); cursor: pointer; font-weight: 500; transition: all .15s; margin-left: auto; }
+  .save-btn:hover { opacity: .85; }
+  .save-btn.success { background: var(--green-light); border-color: #3B6D11; color: #27500A; }
+  .col-header { display: grid; grid-template-columns: minmax(0,1fr) 72px 88px 95px 68px; gap: 8px; padding: 0 12px; margin-bottom: 4px; }
+  .col-label { font-size: 11px; color: var(--text3); text-align: center; }
+  .col-label:first-child { text-align: left; }
+  .items-list { display: flex; flex-direction: column; gap: 4px; }
+  .section-head { padding: 6px 12px; background: var(--bg2); border-radius: var(--radius); }
+  .section-head span { font-size: 11px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; }
+  .item-row { display: grid; grid-template-columns: minmax(0,1fr) 72px 88px 95px 68px; gap: 8px; align-items: center; padding: 9px 12px; background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); }
+  .item-row.low { border-color: var(--red-border); background: var(--red-bg); }
+  .item-name { font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item-unit { font-size: 11px; color: var(--text2); text-align: center; }
+  .item-input { font-size: 13px; padding: 5px 6px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: var(--bg2); color: var(--text); width: 100%; text-align: center; -moz-appearance: textfield; }
+  .item-input::-webkit-outer-spin-button, .item-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .item-input:focus { outline: none; border-color: var(--blue-border); }
+  .low-badge { font-size: 10px; padding: 2px 7px; border-radius: 10px; background: var(--red-light); color: var(--red-text); font-weight: 500; display: inline-block; }
+  .ok-badge { font-size: 10px; padding: 2px 7px; border-radius: 10px; background: var(--green-light); color: var(--green-text); font-weight: 500; display: inline-block; }
+  .hint { font-size: 12px; color: var(--text3); margin-top: .75rem; }
+
+  /* Tabs */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Reports */
+  .summary-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 1.25rem; }
+  .sum-card { background: var(--bg2); border-radius: var(--radius); padding: .85rem 1rem; }
+  .sum-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+  .sum-val { font-size: 22px; font-weight: 500; color: var(--text); }
+  .sum-val.warn { color: #A32D2D; }
+  .report-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+  .report-table th { font-size: 11px; color: var(--text2); font-weight: 400; padding: 6px 8px; border-bottom: 0.5px solid var(--border); text-align: left; }
+  .report-table td { padding: 8px 8px; border-bottom: 0.5px solid var(--border); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .report-table tr:last-child td { border-bottom: none; }
+  .report-table .neg { color: #A32D2D; }
+  .report-table .pos { color: #3B6D11; }
+  .report-table .sec-row td { background: var(--bg2); font-size: 11px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: .04em; padding: 5px 8px; }
+
+  /* Alerts */
+  .alert-box { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.25rem; }
+  .alert-title { font-size: 15px; font-weight: 500; margin-bottom: .85rem; color: var(--text); }
+  .alert-row { display: grid; grid-template-columns: 110px 1fr; gap: 10px; align-items: center; margin-bottom: .65rem; }
+  .alert-label { font-size: 13px; color: var(--text2); }
+  .alert-input { font-size: 13px; padding: 7px 10px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: var(--bg); color: var(--text); width: 100%; }
+  .alert-input:focus { outline: none; border-color: var(--blue-border); }
+  .thresh-grid { display: flex; flex-direction: column; gap: 4px; margin-top: .75rem; }
+  .thresh-row { display: grid; grid-template-columns: minmax(0,1fr) 72px 72px; gap: 8px; align-items: center; padding: 7px 10px; background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); }
+  .thresh-name { font-size: 12px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .thresh-input { font-size: 12px; padding: 4px 6px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: var(--bg2); color: var(--text); width: 100%; text-align: center; -moz-appearance: textfield; }
+  .thresh-input::-webkit-outer-spin-button, .thresh-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .saved-msg { font-size: 12px; color: #3B6D11; margin-top: 6px; display: none; }
+  .action-btn { font-size: 13px; padding: 7px 20px; border-radius: var(--radius); border: 0.5px solid var(--blue-border); background: var(--blue-bg); color: var(--blue-text); cursor: pointer; font-weight: 500; transition: opacity .15s; display: inline-block; margin-top: 1rem; }
+  .action-btn:hover { opacity: .85; }
+
+  /* Info box */
+  .info-box { background: var(--blue-bg); border: 0.5px solid var(--blue-border); border-radius: var(--radius); padding: .85rem 1rem; margin-bottom: 1.25rem; }
+  .info-box p { font-size: 13px; color: var(--blue-text); line-height: 1.6; }
+  .info-box a { color: var(--blue-text); font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- PIN SCREEN -->
+  <div id="pin-screen">
+    <div class="pin-screen">
+      <div class="pin-title">Karie Anne's Inventory</div>
+      <div class="pin-sub">Select your location, then enter your PIN</div>
+      <div class="loc-grid">
+        <div class="loc-card" onclick="selectLoc('bountiful',this)">
+          <div class="loc-card-name">Bountiful</div>
+          <div class="loc-card-sub">Food trailer</div>
+        </div>
+        <div class="loc-card" onclick="selectLoc('stadium',this)">
+          <div class="loc-card-name">Stadium</div>
+          <div class="loc-card-sub">Vendor location</div>
+        </div>
+        <div class="loc-card" onclick="selectLoc('storage',this)">
+          <div class="loc-card-name">Storage</div>
+          <div class="loc-card-sub">Backup facility</div>
+        </div>
+      </div>
+      <div class="pin-dots" id="pin-dots">
+        <div class="pin-dot" id="d0"></div>
+        <div class="pin-dot" id="d1"></div>
+        <div class="pin-dot" id="d2"></div>
+        <div class="pin-dot" id="d3"></div>
+      </div>
+      <div class="pin-pad">
+        <div class="pin-key" onclick="pinKey('1')">1</div>
+        <div class="pin-key" onclick="pinKey('2')">2</div>
+        <div class="pin-key" onclick="pinKey('3')">3</div>
+        <div class="pin-key" onclick="pinKey('4')">4</div>
+        <div class="pin-key" onclick="pinKey('5')">5</div>
+        <div class="pin-key" onclick="pinKey('6')">6</div>
+        <div class="pin-key" onclick="pinKey('7')">7</div>
+        <div class="pin-key" onclick="pinKey('8')">8</div>
+        <div class="pin-key" onclick="pinKey('9')">9</div>
+        <div class="pin-key sm" onclick="pinClear()">Clear</div>
+        <div class="pin-key" onclick="pinKey('0')">0</div>
+        <div class="pin-key sm" onclick="pinBack()">&#8592;</div>
+      </div>
+      <div class="pin-error" id="pin-error"></div>
+      <div class="pin-hint">
+        <!--
+          TO SET YOUR PINS: Find the PINS object in the script below and change the values.
+          Default demo PINs — Bountiful: 1111 | Stadium: 2222 | Storage: 3333
+        -->
+        Demo PINs &mdash; Bountiful: 1111 &nbsp;|&nbsp; Stadium: 2222 &nbsp;|&nbsp; Storage: 3333
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="main-app" style="display:none">
+    <div class="header">
+      <div>
+        <div class="brand-name">Karie Anne's</div>
+        <div class="brand-loc" id="loc-label"></div>
+      </div>
+      <div class="header-right">
+        <span class="loc-badge" id="loc-badge"></span>
+        <div class="nav">
+          <button class="nav-btn active" onclick="showTab('inventory',this)">Inventory</button>
+          <button class="nav-btn" onclick="showTab('reports',this)">Reports</button>
+          <button class="nav-btn" onclick="showTab('alerts',this)">Alerts</button>
+        </div>
+        <button class="signout-btn" onclick="signOut()">Sign out</button>
+      </div>
+    </div>
+
+    <!-- INVENTORY TAB -->
+    <div id="tab-inventory" class="tab-content active">
+      <div class="week-row">
+        <span class="week-label">Week of:</span>
+        <select class="week-select" id="inv-week" onchange="renderItems()"></select>
+        <button class="save-btn" id="save-count-btn" onclick="saveCount()">Save count</button>
+      </div>
+      <div class="col-header">
+        <span class="col-label">Item</span>
+        <span class="col-label">Unit</span>
+        <span class="col-label">Qty on hand</span>
+        <span class="col-label">Low threshold</span>
+        <span class="col-label">Status</span>
+      </div>
+      <div class="items-list" id="items-grid"></div>
+      <p class="hint">Items highlighted in red are at or below your low-stock threshold. Adjust thresholds inline or in the Alerts tab.</p>
+    </div>
+
+    <!-- REPORTS TAB -->
+    <div id="tab-reports" class="tab-content">
+      <div class="week-row" style="margin-bottom:1.25rem">
+        <span class="week-label">Week A:</span>
+        <select class="week-select" id="rpt-week-a" onchange="renderReport()"></select>
+        <span class="week-label">vs Week B:</span>
+        <select class="week-select" id="rpt-week-b" onchange="renderReport()"></select>
+      </div>
+      <div class="summary-cards">
+        <div class="sum-card"><div class="sum-label">Items tracked</div><div class="sum-val" id="rpt-total">21</div></div>
+        <div class="sum-card"><div class="sum-label">Below threshold</div><div class="sum-val warn" id="rpt-low">—</div></div>
+        <div class="sum-card"><div class="sum-label">Weeks of data</div><div class="sum-val" id="rpt-weeks">—</div></div>
+      </div>
+      <div id="report-body"></div>
+    </div>
+
+    <!-- ALERTS TAB -->
+    <div id="tab-alerts" class="tab-content">
+      <div class="info-box">
+        <p>Text and email alerts require a small backend service. See the <strong>README</strong> in your GitHub repo for setup instructions using Twilio (SMS) and SendGrid (email). The contact info you save here will be used once that service is connected.</p>
+      </div>
+      <div class="alert-box">
+        <div class="alert-title">Alert contact</div>
+        <div class="alert-row"><span class="alert-label">Name</span><input class="alert-input" id="a-name" placeholder="e.g. Karie Anne" /></div>
+        <div class="alert-row"><span class="alert-label">Email</span><input class="alert-input" id="a-email" type="email" placeholder="you@example.com" /></div>
+        <div class="alert-row"><span class="alert-label">Phone (SMS)</span><input class="alert-input" id="a-phone" placeholder="(801) 555-0100" /></div>
+        <p class="hint" style="margin-top:.5rem">Same contact receives low-stock alerts from all locations.</p>
+        <button class="action-btn" onclick="saveContact()">Save contact</button>
+        <div class="saved-msg" id="contact-saved">Contact saved!</div>
+      </div>
+      <div class="alert-box">
+        <div class="alert-title">Low-stock thresholds — <span id="thresh-loc-label" style="font-weight:400;color:var(--text2)"></span></div>
+        <p class="hint" style="margin-bottom:.75rem">You'll be alerted when any item at this location hits or drops below its minimum quantity.</p>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 72px 72px;gap:8px;padding:0 10px;margin-bottom:6px">
+          <span style="font-size:11px;color:var(--text2)">Item</span>
+          <span style="font-size:11px;color:var(--text2);text-align:center">Min qty</span>
+          <span style="font-size:11px;color:var(--text2);text-align:center">Unit</span>
+        </div>
+        <div class="thresh-grid" id="thresh-grid"></div>
+        <button class="action-btn" onclick="saveThresholds()">Save thresholds</button>
+        <div class="saved-msg" id="thresh-saved">Thresholds saved!</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const ITEMS = [
+  {section:'Custard',          id:'custard_vanilla',  name:'Vanilla custard',          unit:'quarts'},
+  {section:'Custard',          id:'custard_choc',     name:'Chocolate custard',         unit:'quarts'},
+  {section:'Italian ice — flavors', id:'flav_red_rasp',    name:'Red raspberry',             unit:'bottles'},
+  {section:'Italian ice — flavors', id:'flav_blue_rasp',   name:'Blue raspberry',            unit:'bottles'},
+  {section:'Italian ice — flavors', id:'flav_pina',        name:'Pina colada',               unit:'bottles'},
+  {section:'Italian ice — flavors', id:'flav_green_apple', name:'Green apple',               unit:'bottles'},
+  {section:'Italian ice — flavors', id:'flav_coconut',     name:'Coconut',                   unit:'bottles'},
+  {section:'Italian ice — flavors', id:'flav_mango',       name:'Mango',                     unit:'bottles'},
+  {section:'Italian ice — flavors', id:'flav_peach',       name:'Peach',                     unit:'bottles'},
+  {section:'Italian ice — flavors', id:'flav_tigers',      name:"Tiger's blood",             unit:'bottles'},
+  {section:'Serving supplies', id:'spoons',           name:'Spoons',                    unit:'units'},
+  {section:'Serving supplies', id:'sample_spoons',    name:'Sample spoons',             unit:'units'},
+  {section:'Serving supplies', id:'cups_sm',          name:'Small cups',                unit:'units'},
+  {section:'Serving supplies', id:'cups_md',          name:'Medium cups',               unit:'units'},
+  {section:'Serving supplies', id:'cups_lg',          name:'Large cups',                unit:'units'},
+  {section:'Dry goods',        id:'sugar',            name:'Sugar',                     unit:'25 lb bags'},
+  {section:'Operations',       id:'stickers',         name:'Cup stickers',              unit:'sheets'},
+  {section:'Operations',       id:'receipt_paper',    name:'Receipt paper',             unit:'rolls'},
+  {section:'Operations',       id:'sticky_receipt',   name:'Sticky receipt paper',      unit:'rolls'},
+  {section:'Operations',       id:'garbage_bags',     name:'Garbage bags',              unit:'units'},
+  {section:'Operations',       id:'napkins',          name:'Napkins',                   unit:'sleeves'},
+];
+
+// ── CHANGE THESE PINS BEFORE GOING LIVE ──────────────────────────────────────
+const PINS = { bountiful: '1111', stadium: '2222', storage: '3333' };
+// ─────────────────────────────────────────────────────────────────────────────
+
+const LOC_LABELS = { bountiful: 'Bountiful Trailer', stadium: 'Stadium Vendor', storage: 'Storage Facility' };
+const LOC_BADGE  = { bountiful: 'badge-bountiful',   stadium: 'badge-stadium',  storage: 'badge-storage' };
+
+let activeLoc = null, pendingLoc = null, currentPin = '';
+
+function selectLoc(loc, el) {
+  pendingLoc = loc; currentPin = ''; updateDots();
+  document.getElementById('pin-error').textContent = '';
+  document.querySelectorAll('.loc-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function pinKey(k) {
+  if (!pendingLoc) { document.getElementById('pin-error').textContent = 'Select a location first.'; return; }
+  if (currentPin.length >= 4) return;
+  currentPin += k; updateDots();
+  if (currentPin.length === 4) setTimeout(checkPin, 120);
+}
+function pinBack()  { currentPin = currentPin.slice(0,-1); updateDots(); }
+function pinClear() { currentPin = ''; updateDots(); document.getElementById('pin-error').textContent = ''; }
+function updateDots() {
+  for (let i = 0; i < 4; i++) {
+    document.getElementById('d'+i).classList.toggle('filled', i < currentPin.length);
+  }
+}
+function checkPin() {
+  if (PINS[pendingLoc] === currentPin) {
+    activeLoc = pendingLoc;
+    document.getElementById('pin-screen').style.display = 'none';
+    document.getElementById('main-app').style.display = 'block';
+    document.getElementById('loc-label').textContent = LOC_LABELS[activeLoc];
+    const badge = document.getElementById('loc-badge');
+    badge.textContent = LOC_LABELS[activeLoc];
+    badge.className = 'loc-badge ' + LOC_BADGE[activeLoc];
+    document.getElementById('thresh-loc-label').textContent = LOC_LABELS[activeLoc];
+    populateWeekSelects();
+    renderItems();
+  } else {
+    document.getElementById('pin-error').textContent = 'Incorrect PIN — try again.';
+    currentPin = ''; updateDots();
+  }
+}
+function signOut() {
+  activeLoc = null; pendingLoc = null; currentPin = ''; updateDots();
+  document.getElementById('pin-screen').style.display = 'block';
+  document.getElementById('main-app').style.display = 'none';
+  document.getElementById('pin-error').textContent = '';
+  document.querySelectorAll('.loc-card').forEach(c => c.classList.remove('selected'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.nav-btn').classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-inventory').classList.add('active');
+}
+
+function getWeeks(n=10) {
+  const weeks = [], now = new Date(), day = now.getDay();
+  const sun = new Date(now); sun.setDate(now.getDate() - day);
+  for (let i = 0; i < n; i++) {
+    const d = new Date(sun); d.setDate(sun.getDate() - i*7);
+    weeks.push({ label: 'Week of ' + d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}), key: d.toISOString().split('T')[0] });
+  }
+  return weeks;
+}
+function populateWeekSelects() {
+  const weeks = getWeeks();
+  document.getElementById('rpt-total').textContent = ITEMS.length;
+  document.getElementById('rpt-weeks').textContent = weeks.length;
+  ['inv-week','rpt-week-a','rpt-week-b'].forEach((id, i) => {
+    const sel = document.getElementById(id); sel.innerHTML = '';
+    weeks.forEach((w, wi) => {
+      const o = document.createElement('option');
+      o.value = w.key; o.textContent = w.label;
+      if (id === 'rpt-week-b' && wi === 1) o.selected = true;
+      sel.appendChild(o);
+    });
+  });
+}
+
+function sk(week) { return `ka_${activeLoc}_${week}`; }
+function tk()     { return `ka_thresh_${activeLoc}`; }
+function ck()     { return 'ka_contact'; }
+function getT()   { try { return JSON.parse(localStorage.getItem(tk())) || {}; } catch { return {}; } }
+function getC(w)  { try { return JSON.parse(localStorage.getItem(sk(w))) || {}; } catch { return {}; } }
+
+function renderItems() {
+  const week = document.getElementById('inv-week').value;
+  const counts = getC(week), t = getT();
+  const grid = document.getElementById('items-grid'); grid.innerHTML = '';
+  let lastSection = '';
+  ITEMS.forEach(item => {
+    if (item.section !== lastSection) {
+      lastSection = item.section;
+      const sh = document.createElement('div'); sh.className = 'section-head';
+      sh.innerHTML = `<span>${item.section}</span>`; grid.appendChild(sh);
+    }
+    const qty = counts[item.id] ?? '', thresh = t[item.id] ?? 0;
+    const isLow = thresh > 0 && qty !== '' && Number(qty) <= thresh;
+    const row = document.createElement('div'); row.className = 'item-row' + (isLow ? ' low' : '');
+    row.innerHTML = `
+      <span class="item-name" title="${item.name}">${item.name}</span>
+      <span class="item-unit">${item.unit}</span>
+      <input class="item-input" id="inp_${item.id}" type="number" min="0" inputmode="numeric" value="${qty}" placeholder="0" />
+      <input class="item-input" type="number" min="0" inputmode="numeric" value="${thresh || ''}" placeholder="—" onchange="inlineThresh('${item.id}',this.value)" />
+      <span style="text-align:center">${isLow ? '<span class="low-badge">Low</span>' : '<span class="ok-badge">OK</span>'}</span>
+    `;
+    grid.appendChild(row);
+  });
+}
+
+function inlineThresh(id, val) {
+  const t = getT(); t[id] = parseInt(val) || 0;
+  localStorage.setItem(tk(), JSON.stringify(t)); renderItems();
+}
+
+function saveCount() {
+  const week = document.getElementById('inv-week').value, data = {};
+  ITEMS.forEach(item => { const inp = document.getElementById('inp_'+item.id); if (inp) data[item.id] = parseInt(inp.value) || 0; });
+  localStorage.setItem(sk(week), JSON.stringify(data));
+  renderItems();
+  const btn = document.getElementById('save-count-btn');
+  btn.textContent = 'Saved!'; btn.classList.add('success');
+  setTimeout(() => { btn.textContent = 'Save count'; btn.classList.remove('success'); }, 2000);
+}
+
+function renderThreshGrid() {
+  const t = getT(), grid = document.getElementById('thresh-grid'); grid.innerHTML = '';
+  ITEMS.forEach(item => {
+    const row = document.createElement('div'); row.className = 'thresh-row';
+    row.innerHTML = `<span class="thresh-name" title="${item.name}">${item.name}</span><input class="thresh-input" id="thresh_${item.id}" type="number" min="0" inputmode="numeric" value="${t[item.id] || ''}" placeholder="0" /><span style="font-size:11px;color:var(--text2);text-align:center">${item.unit}</span>`;
+    grid.appendChild(row);
+  });
+}
+
+function saveThresholds() {
+  const t = {};
+  ITEMS.forEach(item => { const inp = document.getElementById('thresh_'+item.id); if (inp) t[item.id] = parseInt(inp.value) || 0; });
+  localStorage.setItem(tk(), JSON.stringify(t)); renderItems();
+  const msg = document.getElementById('thresh-saved'); msg.style.display = 'block';
+  setTimeout(() => msg.style.display = 'none', 2000);
+}
+
+function loadContact() {
+  try { const c = JSON.parse(localStorage.getItem(ck())); if (!c) return; document.getElementById('a-name').value = c.name||''; document.getElementById('a-email').value = c.email||''; document.getElementById('a-phone').value = c.phone||''; } catch {}
+}
+function saveContact() {
+  localStorage.setItem(ck(), JSON.stringify({ name: document.getElementById('a-name').value, email: document.getElementById('a-email').value, phone: document.getElementById('a-phone').value }));
+  const msg = document.getElementById('contact-saved'); msg.style.display = 'block';
+  setTimeout(() => msg.style.display = 'none', 2000);
+}
+
+function renderReport() {
+  const wA = document.getElementById('rpt-week-a').value, wB = document.getElementById('rpt-week-b').value;
+  const cA = getC(wA), cB = getC(wB), t = getT();
+  let low = 0;
+  ITEMS.forEach(item => { if (t[item.id] > 0 && cA[item.id] !== undefined && cA[item.id] <= t[item.id]) low++; });
+  document.getElementById('rpt-low').textContent = low || '0';
+  let html = '<table class="report-table"><thead><tr><th style="width:36%">Item</th><th style="width:14%">Unit</th><th style="width:14%">Week A</th><th style="width:14%">Week B</th><th style="width:12%">Change</th></tr></thead><tbody>';
+  let lastSec = '';
+  ITEMS.forEach(item => {
+    if (item.section !== lastSec) { lastSec = item.section; html += `<tr class="sec-row"><td colspan="5">${item.section}</td></tr>`; }
+    const a = cA[item.id] ?? '—', b = cB[item.id] ?? '—';
+    let change = '—', cls = '';
+    if (a !== '—' && b !== '—') { const diff = Number(a) - Number(b); change = (diff > 0 ? '+' : '') + diff; cls = diff < 0 ? 'neg' : diff > 0 ? 'pos' : ''; }
+    html += `<tr><td>${item.name}</td><td style="color:var(--text2)">${item.unit}</td><td>${a}</td><td>${b}</td><td class="${cls}">${change}</td></tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('report-body').innerHTML = html;
+}
+
+function showTab(tab, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  btn.classList.add('active');
+  if (tab === 'reports') renderReport();
+  if (tab === 'alerts') { renderThreshGrid(); loadContact(); }
+}
+</script>
+</body>
+</html>
